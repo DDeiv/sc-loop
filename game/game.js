@@ -33,6 +33,18 @@ let events, evIdx, loopN, startTime, xp, xpNext, level, era, active, playing;
 let genresRun, mods, aura, shield, stemFlash, lastSkankDir, kickFlash, hitFlash;
 let spawnAcc = 0, last = 0;
 let combo = 0, boostTimer = 0, beatHitFx = 0, hoverIdx = -1;
+const WORLD_W = 2400, WORLD_H = 2400;
+let camX = 0, camY = 0;
+const LANDMARKS = [
+  { x: 400, y: 400, k: "ring", c: "#3C3489" },
+  { x: 2000, y: 400, k: "cross", c: "#711F1F" },
+  { x: 1200, y: 700, k: "diamond", c: "#085041" },
+  { x: 400, y: 1400, k: "tri", c: "#633806" },
+  { x: 2000, y: 1300, k: "ring", c: "#72243E" },
+  { x: 800, y: 2000, k: "cross", c: "#0C447C" },
+  { x: 1600, y: 1900, k: "tri", c: "#27500A" },
+  { x: 1200, y: 1200, k: "diamond", c: "#444441" },
+];
 
 function onBeatPress() {
   if (!started || dead || choosing) return;
@@ -118,7 +130,7 @@ function eraFor(lv) {
 }
 
 function reset() {
-  player = { x: W / 2, y: H / 2, r: 13, hp: 5, iframe: 0, dirX: 1, dirY: 0 };
+  player = { x: WORLD_W / 2, y: WORLD_H / 2, r: 13, hp: 5, iframe: 0, dirX: 1, dirY: 0 };
   enemies = []; shots = []; waves = []; particles = []; gems = []; banners = [];
   xp = 0; level = 1; xpNext = 6; era = ERAS[0];
   genresRun = new Set(); mods = baseMods(); aura = 0; shield = 0;
@@ -254,10 +266,12 @@ function fire(ev) {
 function spawnEnemy(elapsed) {
   const side = Math.floor(Math.random() * 4);
   let x, y;
-  if (side === 0) { x = -20; y = Math.random() * H; }
-  else if (side === 1) { x = W + 20; y = Math.random() * H; }
-  else if (side === 2) { x = Math.random() * W; y = -20; }
-  else { x = Math.random() * W; y = H + 20; }
+  if (side === 0) { x = camX - 30; y = camY + Math.random() * H; }
+  else if (side === 1) { x = camX + W + 30; y = camY + Math.random() * H; }
+  else if (side === 2) { x = camX + Math.random() * W; y = camY - 30; }
+  else { x = camX + Math.random() * W; y = camY + H + 30; }
+  x = Math.max(10, Math.min(WORLD_W - 10, x));
+  y = Math.max(10, Math.min(WORLD_H - 10, y));
   const eraIdx = ERAS.indexOf(era);
   const big = Math.random() < Math.min(0.18, 0.03 + elapsed / 300 + eraIdx * 0.03);
   enemies.push({
@@ -397,8 +411,8 @@ function frame(ts) {
       const n = Math.hypot(mx, my);
       player.dirX = mx / n; player.dirY = my / n;
       const sp = 240 * mods.move;
-      player.x = Math.max(14, Math.min(W - 14, player.x + mx / n * sp * dt));
-      player.y = Math.max(14, Math.min(H - 14, player.y + my / n * sp * dt));
+      player.x = Math.max(14, Math.min(WORLD_W - 14, player.x + mx / n * sp * dt));
+      player.y = Math.max(14, Math.min(WORLD_H - 14, player.y + my / n * sp * dt));
     }
     player.iframe = Math.max(0, player.iframe - dt);
     aura = Math.max(0, aura - dt * 0.4);
@@ -464,7 +478,8 @@ function frame(ts) {
         }
       }
     }
-    shots = shots.filter(s => s.life > 0 && s.x > -40 && s.x < W + 40 && s.y > -40 && s.y < H + 40);
+    shots = shots.filter(s => s.life > 0 && s.x > camX - 80 && s.x < camX + W + 80 &&
+                               s.y > camY - 80 && s.y < camY + H + 80);
 
     for (const w of waves) {
       w.r += 320 * dt;
@@ -520,23 +535,41 @@ function draw(now, elapsed, ts) {
   for (const b of banners) b.until -= 0.016;
   banners = banners.filter(b => b.until > 0);
 
+  camX = Math.max(0, Math.min(WORLD_W - W, player.x - W / 2));
+  camY = Math.max(0, Math.min(WORLD_H - H, player.y - H / 2));
   cx.save();
   if (shake > 0) cx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
   cx.fillStyle = `rgb(${Math.round(kickFlash * 22 + hitFlash * 50)}, ${Math.round(kickFlash * 18)}, ${Math.round(kickFlash * 14)})`;
   cx.fillRect(-10, -10, W + 20, H + 20);
+  cx.translate(-camX, -camY);
 
-  const beat = ((now - t0) / (60 / LOOP_BPM)) % 8;
-  for (let i = 0; i < 8; i++) {
-    cx.fillStyle = Math.floor(beat) === i ? "#FAC775" : "#3a3a42";
-    cx.beginPath(); cx.arc(W / 2 - 84 + i * 24, 22, Math.floor(beat) === i ? 6 : 4, 0, 7); cx.fill();
+  cx.strokeStyle = "#17171d"; cx.lineWidth = 1;
+  const gs = 200;
+  cx.beginPath();
+  for (let gx = Math.floor(camX / gs) * gs; gx <= camX + W + gs; gx += gs) {
+    cx.moveTo(gx, camY - 10); cx.lineTo(gx, camY + H + 10);
   }
-  if (combo > 0) {
-    cx.textAlign = "center";
-    cx.fillStyle = beatHitFx > 0.3 ? "#FAC775" : "#8a8a92";
-    cx.font = "13px monospace";
-    cx.fillText("on beat x" + combo, W / 2 + 150, 27);
-    cx.textAlign = "left";
+  for (let gy = Math.floor(camY / gs) * gs; gy <= camY + H + gs; gy += gs) {
+    cx.moveTo(camX - 10, gy); cx.lineTo(camX + W + 10, gy);
   }
+  cx.stroke();
+  for (const lm of LANDMARKS) {
+    if (lm.x < camX - 90 || lm.x > camX + W + 90 || lm.y < camY - 90 || lm.y > camY + H + 90) continue;
+    cx.strokeStyle = lm.c; cx.lineWidth = 3;
+    if (lm.k === "ring") { cx.beginPath(); cx.arc(lm.x, lm.y, 60, 0, 7); cx.stroke();
+      cx.beginPath(); cx.arc(lm.x, lm.y, 30, 0, 7); cx.stroke(); }
+    else if (lm.k === "cross") {
+      cx.beginPath(); cx.moveTo(lm.x - 50, lm.y); cx.lineTo(lm.x + 50, lm.y);
+      cx.moveTo(lm.x, lm.y - 50); cx.lineTo(lm.x, lm.y + 50); cx.stroke(); }
+    else if (lm.k === "diamond") {
+      cx.beginPath(); cx.moveTo(lm.x, lm.y - 55); cx.lineTo(lm.x + 55, lm.y);
+      cx.lineTo(lm.x, lm.y + 55); cx.lineTo(lm.x - 55, lm.y); cx.closePath(); cx.stroke(); }
+    else {
+      cx.beginPath(); cx.moveTo(lm.x, lm.y - 55); cx.lineTo(lm.x + 50, lm.y + 40);
+      cx.lineTo(lm.x - 50, lm.y + 40); cx.closePath(); cx.stroke(); }
+  }
+  cx.strokeStyle = "#5f2a2a"; cx.lineWidth = 4;
+  cx.strokeRect(2, 2, WORLD_W - 4, WORLD_H - 4);
 
   if (aura > 0) {
     cx.strokeStyle = `rgba(212,83,126,${aura * 0.5})`; cx.lineWidth = 2;
@@ -591,9 +624,40 @@ function draw(now, elapsed, ts) {
   }
   cx.restore();
 
+  const beat = ((now - t0) / (60 / LOOP_BPM)) % 8;
+  for (let i = 0; i < 8; i++) {
+    cx.fillStyle = Math.floor(beat) === i ? "#FAC775" : "#3a3a42";
+    cx.beginPath(); cx.arc(W / 2 - 84 + i * 24, 22, Math.floor(beat) === i ? 6 : 4, 0, 7); cx.fill();
+  }
+  if (combo > 0) {
+    cx.textAlign = "center";
+    cx.fillStyle = beatHitFx > 0.3 ? "#FAC775" : "#8a8a92";
+    cx.font = "13px monospace";
+    cx.fillText("on beat x" + combo, W / 2 + 150, 27);
+    cx.textAlign = "left";
+  }
+
+  const mmS = 110, mmX = W - mmS - 14, mmY = 38, mSc = mmS / WORLD_W;
+  cx.fillStyle = "rgba(14,14,18,0.85)"; cx.fillRect(mmX, mmY, mmS, mmS);
+  cx.strokeStyle = "#3a3a42"; cx.lineWidth = 1; cx.strokeRect(mmX, mmY, mmS, mmS);
+  for (const lm of LANDMARKS) {
+    cx.fillStyle = lm.c;
+    cx.fillRect(mmX + lm.x * mSc - 2, mmY + lm.y * mSc - 2, 4, 4);
+  }
+  cx.fillStyle = "rgba(226,75,74,0.8)";
+  let mmN = 0;
+  for (const e of enemies) {
+    if (mmN++ > 180) break;
+    cx.fillRect(mmX + e.x * mSc - 1, mmY + e.y * mSc - 1, 2, 2);
+  }
+  cx.strokeStyle = "rgba(138,138,146,0.5)";
+  cx.strokeRect(mmX + camX * mSc, mmY + camY * mSc, W * mSc, H * mSc);
+  cx.fillStyle = "#5DCAA5";
+  cx.beginPath(); cx.arc(mmX + player.x * mSc, mmY + player.y * mSc, 3, 0, 7); cx.fill();
+
   cx.fillStyle = "#8a8a92"; cx.font = "13px monospace";
   cx.fillText("hp " + "■".repeat(Math.max(0, player.hp)) + (shield > 0 ? " +" + shield : ""), 14, 24);
-  cx.fillText("lv " + level + " · " + era.name + " · " + elapsed.toFixed(0) + "s", W - 190, 24);
+  cx.fillText("lv " + level + " · " + era.name + " · " + elapsed.toFixed(0) + "s", W - 200, 24);
   cx.fillStyle = "#2e2e36"; cx.fillRect(14, 34, 140, 5);
   cx.fillStyle = "#97C459"; cx.fillRect(14, 34, 140 * Math.min(1, xp / xpNext), 5);
 
