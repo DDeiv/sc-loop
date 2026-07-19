@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/render.sh:*)",
+      "Bash(python3 tools/:*)",
+      "Bash(.venv/bin/python3:*)",
+      "Bash(afplay:*)",
+      "Read",
+      "Edit",
+      "Write"
+    ]
+  }
+}

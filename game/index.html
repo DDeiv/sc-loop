@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>soundsystem</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000;
+               touch-action: none; overscroll-behavior: none; }
+  #wrap { position: fixed; inset: 0; background: #000; }
+  #crt {
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+    animation: crtFlicker 0.15s infinite;
+  }
+  #crt::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.03) 0px,
+      rgba(255,255,255,0.03) 1px,
+      rgba(0,0,0,0.12) 2px,
+      rgba(0,0,0,0.12) 3px
+    );
+    pointer-events: none; z-index: 3;
+  }
+  #crt::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center,
+      rgba(0,0,0,0) 55%,
+      rgba(0,0,0,0.35) 85%,
+      rgba(0,0,0,0.75) 100%);
+    pointer-events: none; z-index: 4;
+  }
+  @keyframes crtFlicker {
+    0% { opacity: 1; } 50% { opacity: 0.985; } 100% { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) { #crt { animation: none; } }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="crt"><canvas id="c"></canvas></div></div>
+<script src="stems_data.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
