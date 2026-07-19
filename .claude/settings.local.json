@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(gh auth *)",
-      "Bash(gh repo *)"
+      "Bash(gh repo *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(rm \"/Users/deiv/Desktop/supercollider something/.git/index.lock\")",
+      "Bash(git commit -m 'add index.html landing page for GitHub Pages *)",
+      "Bash(rm \"/Users/deiv/Desktop/supercollider something /.git/HEAD.lock\")",
+      "Bash(gh api *)",
+      "Bash(git commit -m 'update game: refactor game.js, gen_stems.py, stems_data, game design notes *)"
     ]
   }
 }

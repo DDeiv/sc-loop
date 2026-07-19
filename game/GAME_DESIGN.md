@@ -211,3 +211,13 @@ Player never sees code. The AI is the invisible house producer.
   P0 kept in game/p0_backup/. Movement and graphics still placeholder by
   design. Genre detection is recipe-based for now; analyzer-driven drift
   stays the target for the real SC pipeline phase.
+- 2026-07-19: v2 "complete loop" build — slot mutation replaces stem
+  accumulation (7 slots: kick/bass/hats/snare/chords/lead/fx; 28 variant
+  stems across 8 genres), era shifts via boss fights: rival soundsystem
+  spawns AT 80/200/330s playing the invading genre's kick+snare stems,
+  whose events fire its attacks (sound clash). Beating it opens a branch
+  choice on the genre graph; branching runs a DJ lowpass sweep transition
+  and re-skins matching slots to the new genre palette. Run = a path
+  (dub -> house -> acid...), shown in HUD and death recap; export names
+  the wav after the path. Cards now install/swap slot variants from the
+  current genre + its neighbors.
